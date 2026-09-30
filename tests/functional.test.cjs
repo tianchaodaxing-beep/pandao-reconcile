@@ -1,0 +1,12 @@
+const test=require('node:test'); const assert=require('node:assert/strict'); const B=require('../core.js');
+const cfg={keys:[['id','id']],leftAmount:'money',rightAmount:'money',tolerance:.01};
+test("金额差异左右缺失独立核对",()=>{const r=B.reconcile([{id:'A',money:100},{id:'B',money:50}],[{id:'A',money:99},{id:'C',money:3}],cfg);assert.deepEqual(r.map(x=>x.status),['金额不同','仅左表存在','仅右表存在']);assert.equal(r[0].difference,1);});
+test("重复匹配值不自动配对",()=>{const r=B.reconcile([{id:'A',money:1},{id:'A',money:2}],[{id:'A',money:3}],cfg);assert.equal(r[0].status,'匹配值重复');assert.equal(r[0].leftCount,2);});
+test("空匹配值保留两侧行数",()=>{const r=B.reconcile([{id:'',money:1}],[{id:'',money:1}],cfg);assert.equal(r.length,2);assert.equal(r.reduce((s,x)=>s+x.leftCount,0),1);assert.equal(r.reduce((s,x)=>s+x.rightCount,0),1);});
+test("无效金额不是零",()=>{assert.equal(B.reconcile([{id:'A',money:''}],[{id:'A',money:0}],cfg)[0].status,'金额无效');});
+test("金额容差边界处理浮点数",()=>{assert.equal(B.reconcile([{id:'A',money:1.01}],[{id:'A',money:1}],cfg)[0].status,'一致');});
+test("全角和首尾空格统一",()=>{assert.equal(B.reconcile([{id:' Ａ ',money:1}],[{id:'a',money:1}],cfg)[0].status,'一致');});
+test("可以保留大小写差异",()=>{assert.equal(B.reconcile([{id:'A'}],[{id:'a'}],{...cfg,ignoreCase:false})[0].status,'仅左表存在');});
+test("联合键不会发生分隔符冲突",()=>{const r=B.reconcile([{x:'a / b',y:'c'}],[{x:'a',y:'b / c'}],{keys:[['x','x'],['y','y']],tolerance:0});assert.equal(r.length,2);});
+test("清洗保留数字并去重",()=>{const r=B.cleanRows([{x:' A ',n:1},{x:'A',n:1},{x:'A',n:2}]);assert.equal(r.rows.length,2);assert.equal(r.duplicates,1);assert.equal(r.rows[0].n,1);});
+test("无匹配列被拒绝",()=>{assert.throws(()=>B.reconcile([],[],{keys:[],tolerance:0}));});
