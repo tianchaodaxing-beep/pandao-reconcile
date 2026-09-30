@@ -1,6 +1,6 @@
 {
   "name": "pandao-reconcile",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "清洗重复行，匹配两份表格并导出差异。",
   "license": "MIT",
